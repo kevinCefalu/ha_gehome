@@ -6,7 +6,7 @@ from homeassistant.helpers.entity import Entity
 from gehomesdk import ErdCode, ErdApplianceType, ErdRemoteCommand
 
 from .base import ApplianceApi
-from ..entities import GeErdSensor, GeErdBinarySensor, GeErdPropertySensor, GeErdNumber, GeDishwasherCommandButton
+from ..entities import GeErdSensor, GeErdBinarySensor, GeErdPropertySensor, GeErdNumber, GeDishwasherCommandButton, GeApplianceCycleTimer
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -48,6 +48,16 @@ class DishwasherApi(ApplianceApi):
             GeErdPropertySensor(self, ErdCode.DISHWASHER_CYCLE_COUNTS, "completed", icon_override="mdi:counter", entity_category=EntityCategory.DIAGNOSTIC),
             GeErdPropertySensor(self, ErdCode.DISHWASHER_CYCLE_COUNTS, "reset", icon_override="mdi:counter", entity_category=EntityCategory.DIAGNOSTIC)
         ]
+        if self.has_erd_code(ErdCode.DISHWASHER_CYCLE_STATE) and self.has_erd_code(ErdCode.DISHWASHER_TIME_REMAINING):
+            dishwasher_entities.append(
+                GeApplianceCycleTimer(
+                    self,
+                    ErdCode.DISHWASHER_CYCLE_STATE,
+                    ErdCode.DISHWASHER_TIME_REMAINING,
+                    name_suffix="Dishwasher Cycle Timer",
+                    unique_suffix="dishwasher_cycle_timer",
+                )
+            )
 
         # check for remote command availability and add if present
         if self.has_erd_code(ErdCode.DISHWASHER_REMOTE_START_ENABLE):

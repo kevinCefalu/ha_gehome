@@ -6,7 +6,7 @@ from homeassistant.helpers.entity import Entity
 from gehomesdk import ErdCode, ErdApplianceType
 
 from .base import ApplianceApi
-from ..entities import GeErdSensor, GeErdBinarySensor, GeErdPropertySensor
+from ..entities import GeErdSensor, GeErdBinarySensor, GeErdPropertySensor, GeApplianceCycleTimer
 from ..entities.laundry.ge_washer_cycle_button import GeWasherCycleButton
 
 
@@ -30,6 +30,16 @@ class WasherApi(ApplianceApi):
             GeErdBinarySensor(self, ErdCode.LAUNDRY_DOOR, entity_category=EntityCategory.DIAGNOSTIC),
             GeErdBinarySensor(self, ErdCode.LAUNDRY_REMOTE_STATUS, entity_category=EntityCategory.DIAGNOSTIC),
         ]
+        if self.has_erd_code(ErdCode.LAUNDRY_MACHINE_STATE) and self.has_erd_code(ErdCode.LAUNDRY_TIME_REMAINING):
+            common_entities.append(
+                GeApplianceCycleTimer(
+                    self,
+                    ErdCode.LAUNDRY_MACHINE_STATE,
+                    ErdCode.LAUNDRY_TIME_REMAINING,
+                    name_suffix="Laundry Cycle Timer",
+                    unique_suffix="laundry_cycle_timer",
+                )
+            )
 
         washer_entities = self.get_washer_entities()
 

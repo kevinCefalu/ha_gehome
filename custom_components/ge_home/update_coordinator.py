@@ -39,6 +39,7 @@ from .exceptions import HaAuthError, HaCannotConnect
 PLATFORMS = [
     "binary_sensor", 
     "sensor", 
+    "timer",
     "switch", 
     "water_heater", 
     "select", 

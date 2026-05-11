@@ -6,7 +6,7 @@ from homeassistant.helpers.entity import Entity
 from gehomesdk import ErdCode, ErdApplianceType, ErdRemoteCommand
 
 from .base import ApplianceApi
-from ..entities import GeErdSensor, GeErdBinarySensor, GeErdPropertySensor, GeErdPropertyBinarySensor, GeDishwasherCommandButton
+from ..entities import GeErdSensor, GeErdBinarySensor, GeErdPropertySensor, GeErdPropertyBinarySensor, GeDishwasherCommandButton, GeApplianceCycleTimer
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -41,6 +41,16 @@ class DualDishwasherApi(ApplianceApi):
             GeErdPropertySensor(self, ErdCode.DISHWASHER_USER_SETTING, "wash_zone", erd_override="lower_setting", icon_override="mdi:dock-top", entity_category=EntityCategory.DIAGNOSTIC),
             GeErdPropertySensor(self, ErdCode.DISHWASHER_USER_SETTING, "delay_hours", erd_override="lower_setting", icon_override="mdi:clock-fast", entity_category=EntityCategory.DIAGNOSTIC)
         ]
+        if self.has_erd_code(ErdCode.DISHWASHER_CYCLE_STATE) and self.has_erd_code(ErdCode.DISHWASHER_TIME_REMAINING):
+            lower_entities.append(
+                GeApplianceCycleTimer(
+                    self,
+                    ErdCode.DISHWASHER_CYCLE_STATE,
+                    ErdCode.DISHWASHER_TIME_REMAINING,
+                    name_suffix="Lower Dishwasher Cycle Timer",
+                    unique_suffix="lower_dishwasher_cycle_timer",
+                )
+            )
 
         upper_entities = [
             GeErdSensor(self, ErdCode.DISHWASHER_UPPER_CYCLE_STATE, erd_override="upper_cycle_state", icon_override="mdi:state-machine"),
@@ -65,6 +75,16 @@ class DualDishwasherApi(ApplianceApi):
             GeErdPropertySensor(self, ErdCode.DISHWASHER_UPPER_USER_SETTING, "wash_zone", erd_override="upper_setting", icon_override="mdi:dock-top", entity_category=EntityCategory.DIAGNOSTIC),
             GeErdPropertySensor(self, ErdCode.DISHWASHER_UPPER_USER_SETTING, "delay_hours", erd_override="upper_setting", icon_override="mdi:clock-fast", entity_category=EntityCategory.DIAGNOSTIC)
         ]
+        if self.has_erd_code(ErdCode.DISHWASHER_UPPER_CYCLE_STATE) and self.has_erd_code(ErdCode.DISHWASHER_UPPER_TIME_REMAINING):
+            upper_entities.append(
+                GeApplianceCycleTimer(
+                    self,
+                    ErdCode.DISHWASHER_UPPER_CYCLE_STATE,
+                    ErdCode.DISHWASHER_UPPER_TIME_REMAINING,
+                    name_suffix="Upper Dishwasher Cycle Timer",
+                    unique_suffix="upper_dishwasher_cycle_timer",
+                )
+            )
 
         # Remote commands are always supported, enabled by a physical button per tub, disabled when the tub is opened (lower)
         if True:
