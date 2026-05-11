@@ -14,6 +14,37 @@ from .ge_entity import GeEntity
 class GeApplianceCycleTimer(GeEntity, TimerEntity):
     """Timer entity that snapshots cycle duration when an appliance starts running."""
 
+    _RESTART_THRESHOLD = timedelta(seconds=60)
+    _NOT_RUNNING_TOKENS = (
+        "IDLE",
+        "OFF",
+        "PAUSE",
+        "PAUSED",
+        "COMPLETE",
+        "COMPLETED",
+        "END",
+        "DONE",
+        "FINISH",
+        "CANCEL",
+        "STOP",
+        "READY",
+        "DELAY",
+        "ERROR",
+    )
+    _RUNNING_TOKENS = (
+        "RUN",
+        "START",
+        "RESUME",
+        "ACTIVE",
+        "WASH",
+        "RINSE",
+        "SPIN",
+        "DRY",
+        "TUMBLE",
+        "HEAT",
+        "CYCLE",
+    )
+
     def __init__(
         self,
         api: ApplianceApi,
@@ -114,7 +145,7 @@ class GeApplianceCycleTimer(GeEntity, TimerEntity):
                 or self._started_at is None
                 or (
                     self._last_source_remaining is not None
-                    and source_remaining > self._last_source_remaining + timedelta(seconds=60)
+                    and source_remaining > self._last_source_remaining + self._RESTART_THRESHOLD
                 )
             )
             if should_restart:
@@ -146,36 +177,7 @@ class GeApplianceCycleTimer(GeEntity, TimerEntity):
         if not state:
             return False
 
-        not_running_tokens = [
-            "IDLE",
-            "OFF",
-            "PAUSE",
-            "PAUSED",
-            "COMPLETE",
-            "COMPLETED",
-            "END",
-            "DONE",
-            "FINISH",
-            "CANCEL",
-            "STOP",
-            "READY",
-            "DELAY",
-            "ERROR",
-        ]
-        if any(token in state for token in not_running_tokens):
+        if any(token in state for token in self._NOT_RUNNING_TOKENS):
             return False
 
-        running_tokens = [
-            "RUN",
-            "START",
-            "RESUME",
-            "ACTIVE",
-            "WASH",
-            "RINSE",
-            "SPIN",
-            "DRY",
-            "TUMBLE",
-            "HEAT",
-            "CYCLE",
-        ]
-        return any(token in state for token in running_tokens)
+        return any(token in state for token in self._RUNNING_TOKENS)
