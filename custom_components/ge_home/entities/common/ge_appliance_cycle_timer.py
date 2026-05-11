@@ -2,7 +2,8 @@ from datetime import datetime, timedelta
 from propcache.api import cached_property
 from typing import Optional, Any
 
-from homeassistant.components.timer import TimerEntity, TimerState, TimerEntityFeature
+from homeassistant.components.timer import STATUS_ACTIVE, STATUS_IDLE, STATUS_PAUSED
+from homeassistant.helpers.entity import Entity
 from homeassistant.util import dt as dt_util
 from gehomesdk import ErdCodeType
 
@@ -11,7 +12,7 @@ from ...devices import ApplianceApi
 from .ge_entity import GeEntity
 
 
-class GeApplianceCycleTimer(GeEntity, TimerEntity):
+class GeApplianceCycleTimer(GeEntity, Entity):
     """Timer entity that snapshots cycle duration when an appliance starts running."""
 
     _RESTART_THRESHOLD = timedelta(seconds=60)
@@ -59,12 +60,10 @@ class GeApplianceCycleTimer(GeEntity, TimerEntity):
         self._name_suffix = name_suffix
         self._unique_suffix = unique_suffix
 
-        self._state = TimerState.IDLE
+        self._state = STATUS_IDLE
         self._duration: Optional[timedelta] = None
         self._started_at = None
         self._last_source_remaining: Optional[timedelta] = None
-
-        self._attr_supported_features = TimerEntityFeature(0)
 
     @cached_property
     def unique_id(self) -> str:
@@ -79,7 +78,7 @@ class GeApplianceCycleTimer(GeEntity, TimerEntity):
         return "mdi:timer-play-outline"
 
     @property
-    def state(self) -> TimerState | None:
+    def state(self) -> str | None:
         self._refresh_from_appliance()
         return self._state
 
@@ -91,7 +90,7 @@ class GeApplianceCycleTimer(GeEntity, TimerEntity):
     @property
     def remaining(self) -> timedelta | None:
         self._refresh_from_appliance()
-        if self._state != TimerState.ACTIVE or self._duration is None or self._started_at is None:
+        if self._state != STATUS_ACTIVE or self._duration is None or self._started_at is None:
             return None
 
         elapsed = dt_util.utcnow() - self._started_at
@@ -111,25 +110,25 @@ class GeApplianceCycleTimer(GeEntity, TimerEntity):
         if self._duration is None:
             return
         self._started_at = dt_util.utcnow()
-        self._state = TimerState.ACTIVE
+        self._state = STATUS_ACTIVE
 
     async def async_pause(self) -> None:
-        if self._state != TimerState.ACTIVE:
+        if self._state != STATUS_ACTIVE:
             return
         remaining = self.remaining
         if remaining is None:
             return
         self._duration = remaining
         self._started_at = None
-        self._state = TimerState.PAUSED
+        self._state = STATUS_PAUSED
 
     async def async_cancel(self) -> None:
-        self._state = TimerState.IDLE
+        self._state = STATUS_IDLE
         self._duration = None
         self._started_at = None
 
     async def async_finish(self) -> None:
-        self._state = TimerState.IDLE
+        self._state = STATUS_IDLE
         self._duration = None
         self._started_at = None
 
@@ -142,7 +141,7 @@ class GeApplianceCycleTimer(GeEntity, TimerEntity):
 
         if is_running and source_remaining and source_remaining > timedelta(seconds=0):
             should_restart = (
-                self._state != TimerState.ACTIVE
+                self._state != STATUS_ACTIVE
                 or self._duration is None
                 or self._started_at is None
                 or (
@@ -153,9 +152,9 @@ class GeApplianceCycleTimer(GeEntity, TimerEntity):
             if should_restart:
                 self._duration = source_remaining
                 self._started_at = dt_util.utcnow()
-                self._state = TimerState.ACTIVE
+                self._state = STATUS_ACTIVE
         elif not is_running:
-            self._state = TimerState.IDLE
+            self._state = STATUS_IDLE
             self._duration = None
             self._started_at = None
 
