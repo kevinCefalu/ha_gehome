@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import datetime, timedelta
 from propcache.api import cached_property
 from typing import Optional, Any
 
@@ -99,7 +99,7 @@ class GeApplianceCycleTimer(GeEntity, TimerEntity):
         return max(remaining, timedelta(seconds=0))
 
     @property
-    def finishes_at(self):
+    def finishes_at(self) -> datetime | None:
         rem = self.remaining
         if rem is None:
             return None
@@ -177,7 +177,7 @@ class GeApplianceCycleTimer(GeEntity, TimerEntity):
         if not state:
             return False
 
-        if any(token in state for token in self._NOT_RUNNING_TOKENS):
-            return False
+        has_not_running_token = any(token in state for token in self._NOT_RUNNING_TOKENS)
+        has_running_token = any(token in state for token in self._RUNNING_TOKENS)
 
-        return any(token in state for token in self._RUNNING_TOKENS)
+        return has_running_token and not has_not_running_token
