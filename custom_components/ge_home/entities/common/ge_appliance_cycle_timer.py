@@ -117,6 +117,8 @@ class GeApplianceCycleTimer(GeEntity, TimerEntity):
         if self._state != TimerState.ACTIVE:
             return
         remaining = self.remaining
+        if remaining is None:
+            return
         self._duration = remaining
         self._started_at = None
         self._state = TimerState.PAUSED
@@ -133,7 +135,7 @@ class GeApplianceCycleTimer(GeEntity, TimerEntity):
 
     def _refresh_from_appliance(self) -> None:
         cycle_state = self.api.try_get_erd_value(self._state_erd_code)
-        source_remaining = self._coerce_to_timedelta(
+        source_remaining = self._convert_to_timedelta(
             self.api.try_get_erd_value(self._time_remaining_erd_code)
         )
         is_running = self._is_running_state(cycle_state)
@@ -159,7 +161,7 @@ class GeApplianceCycleTimer(GeEntity, TimerEntity):
 
         self._last_source_remaining = source_remaining
 
-    def _coerce_to_timedelta(self, value: Any) -> Optional[timedelta]:
+    def _convert_to_timedelta(self, value: Any) -> Optional[timedelta]:
         if value is None:
             return None
         if isinstance(value, timedelta):
